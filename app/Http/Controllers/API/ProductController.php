@@ -9,20 +9,46 @@ use Illuminate\Http\Request;
 class ProductController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
+     * @OA\Get(
+     *     tags={"Product"},
+     *     path="/api/products",
+     *     @OA\Parameter(
+     *      name="page",
+     *      in="query",
+     *      required=true,
+     *      @OA\Schema(
+     *           type="string"
+     *      )
+     *   ),
+     *     @OA\Parameter(
+     *      name="name",
+     *      in="query",
+     *      required=false,
+     *      @OA\Schema(
+     *           type="string"
+     *      )
+     *   ),
+     *     @OA\Response(response="200", description="List Products.")
+     * )
      */
-    public function index()
+    public function index(Request $request)
     {
-        sleep(5);//to slow down the server
-        $products = Product::all();
-
+        $input = $request->all();
+        $name = $input["name"] ?? "";
+        $products = Product::where("name", "LIKE", "%$name%")->paginate(10);
         return response()->json($products, 200,
-            ["Content-Type"=>"application/json; charset=UTF-8","Charset"=>'utf-8'],
-        JSON_UNESCAPED_UNICODE);//get products
+            ["Content-Type"=>"application/json; charset=UTF-8", "Charset"=>'utf-8'],
+            JSON_UNESCAPED_UNICODE);
     }
+    public function one(Request $request){
+        $input=$request->all();
+        $name=$input['name']??"";
+        $products=Product::where("name","LIKE","%$name%")->paginate(100);
+        return response()->json($products, 200,
+        ["Content-Type"=>"application/json; character=UTF-8","Charset"=>'utf-8'],
+        JSON_UNESCAPED_UNICODE);
 
+    }
     /**
      * Show the form for creating a new resource.
      *
@@ -34,14 +60,49 @@ class ProductController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * @OA\Post(
+     ** path="/api/products",
+     *   tags={"Product"},
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+     *
+     * @OA\RequestBody(
+     *    required=true,
+     *    description="Create product info",
+     *    @OA\JsonContent(
+     *       required={"name","detail"},
+     *       @OA\Property(property="name", type="string"),
+     *       @OA\Property(property="detail", type="string"),
+     *    ),
+     * ),
+     *   @OA\Response(
+     *      response=200,
+     *       description="Success",
+     *      @OA\MediaType(
+     *           mediaType="application/json",
+     *      )
+     *   ),
+     *   @OA\Response(
+     *      response=400,
+     *      description="Bad Request"
+     *   ),
+     *   @OA\Response(
+     *      response=404,
+     *      description="not found"
+     *   ),
+     *      @OA\Response(
+     *          response=403,
+     *          description="Forbidden"
+     *      )
+     *)
+     **/
     public function store(Request $request)
     {
-        //
+        $input = $request->all();
+        $product = Product::create($input);
+        return response()->json([
+            "success"=> true,
+            "data"=> $product
+        ]);
     }
 
     /**
